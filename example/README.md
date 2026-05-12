@@ -1,4 +1,4 @@
-# Example project for `django-miniblog`
+# Example project for `django-sites-blog`
 
 Bare-minimum Django project that installs `miniblog` and exposes its
 URLs at `/articles/`.
