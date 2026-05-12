@@ -1,8 +1,7 @@
-# Create your models here.
 from django.conf import settings
+from django.contrib.sites.managers import CurrentSiteManager
+from django.contrib.sites.models import Site
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.urls.base import reverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -11,9 +10,7 @@ from model_utils.choices import Choices
 from model_utils.fields import SplitField
 from model_utils.models import StatusModel, TimeStampedModel
 
-from bpp.models.struktura import Uczelnia
-
-SPLIT_MARKER = getattr(settings, "SPLIT_MARKER", "WTF")
+SPLIT_MARKER = getattr(settings, "SPLIT_MARKER", "<!-- split -->")
 
 
 class Article(TimeStampedModel, StatusModel):
@@ -33,6 +30,20 @@ class Article(TimeStampedModel, StatusModel):
     )
     slug = models.SlugField(unique=True)
 
+    sites = models.ManyToManyField(
+        Site,
+        blank=True,
+        related_name="articles",
+        verbose_name=_("Sites"),
+        help_text=_(
+            "Restrict this article to selected sites. "
+            "Leave empty to make it visible on all sites."
+        ),
+    )
+
+    objects = models.Manager()
+    on_site = CurrentSiteManager("sites")
+
     class Meta:
         verbose_name_plural = _("Articles")
         verbose_name = _("Article")
@@ -41,23 +52,7 @@ class Article(TimeStampedModel, StatusModel):
     def get_absolute_url(self):
         if self.status != self.STATUS.published:
             return reverse("admin:miniblog_article_change", args=(self.pk,))
-        # TODO: co gdy będzie wiele uczelni w systemie?
-        uczelnia = Uczelnia.objects.all().first()
-        if self.article_body.has_more:
-            return reverse("bpp:browse_artykul", args=(uczelnia.slug, self.slug))
-        return reverse("bpp:browse_uczelnia", args=(uczelnia.slug,))
+        return reverse("miniblog:article-detail", args=(self.slug,))
 
     def __str__(self):
         return f'Artykuł "{self.title}" - {self.STATUS[self.status]}'
-
-
-@receiver(post_save, sender=Article)
-def invalidate_uczelnia_cache_on_article_change(sender, instance, **kwargs):
-    """
-    Invalidate main page cache when article with published status is saved.
-    This ensures the homepage shows/hides articles immediately after status change.
-    """
-    if instance.status == Article.STATUS.published:
-        from bpp.views.browse import get_uczelnia_context_data
-
-        get_uczelnia_context_data.invalidate()

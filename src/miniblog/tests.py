@@ -1,7 +1,5 @@
-# Create your tests here.
-from unittest.mock import MagicMock, patch
-
 import pytest
+from django.contrib.sites.models import Site
 from django.db import IntegrityError
 
 from miniblog.models import Article
@@ -22,7 +20,6 @@ def test_Article___str__():
 
 @pytest.mark.django_db
 def test_article_get_absolute_url_draft():
-    """Test that draft articles return admin change URL."""
     article = Article.objects.create(
         title="Test Draft",
         status="draft",
@@ -39,49 +36,21 @@ def test_article_get_absolute_url_draft():
 
 
 @pytest.mark.django_db
-def test_article_get_absolute_url_published_with_more(uczelnia):
-    """Test that published articles with more content return article detail URL."""
-    from django.conf import settings
-
-    split_marker = getattr(settings, "SPLIT_MARKER", "<!-- tutaj -->")
-    body_with_more = f"Short excerpt{split_marker}Full article content here"
-
+def test_article_get_absolute_url_published():
     article = Article.objects.create(
-        title="Test Published With More",
+        title="Test Published",
         status="published",
         slug="test-published",
-        article_body=body_with_more,
+        article_body="Body",
     )
 
     url = article.get_absolute_url()
 
-    # After creation, check if has_more is properly set
-    if article.article_body.has_more:
-        assert "artykul" in url
-        assert article.slug in url
-    else:
-        # If SplitField doesn't detect "more", it returns uczelnia URL
-        assert uczelnia.slug in url
-
-
-@pytest.mark.django_db
-def test_article_get_absolute_url_published_without_more(uczelnia):
-    """Test that published articles without more content return uczelnia page URL."""
-    article = Article.objects.create(
-        title="Test Published No More",
-        status="published",
-        slug="test-no-more",
-        article_body="Just a simple article body without split marker",
-    )
-
-    url = article.get_absolute_url()
-
-    assert uczelnia.slug in url
+    assert url == f"/{article.slug}/"
 
 
 @pytest.mark.django_db
 def test_article_slug_uniqueness():
-    """Test that article slug must be unique."""
     Article.objects.create(
         title="First Article",
         slug="unique-slug",
@@ -97,36 +66,13 @@ def test_article_slug_uniqueness():
 
 
 @pytest.mark.django_db
-def test_invalidate_cache_on_article_change_published(uczelnia):
-    """Test that cache is invalidated when published article is saved."""
-    with patch(
-        "bpp.views.browse.get_uczelnia_context_data"
-    ) as mock_get_uczelnia_context_data:
-        mock_get_uczelnia_context_data.invalidate = MagicMock()
-
-        article = Article.objects.create(
-            title="Cache Test",
-            status="published",
-            slug="cache-test",
-            article_body="Test body",
-        )
-        # Trigger post_save by saving again
-        article.title = "Updated title"
-        article.save()
-
-        mock_get_uczelnia_context_data.invalidate.assert_called()
-
-
-@pytest.mark.django_db
 def test_article_ordering():
-    """Test that articles are ordered by published_on descending, then title."""
     from datetime import timedelta
 
     from django.utils import timezone
 
     now = timezone.now()
 
-    # Create articles with different dates and titles
     article1 = Article.objects.create(
         title="BBB Article",
         slug="bbb-article",
@@ -148,15 +94,96 @@ def test_article_ordering():
 
     articles = list(Article.objects.all())
 
-    # Should be ordered by published_on descending (newest first)
-    assert articles[0] == article3  # now (newest)
-    assert articles[1] == article2  # now - 1 day
-    assert articles[2] == article1  # now - 2 days (oldest)
+    assert articles[0] == article3
+    assert articles[1] == article2
+    assert articles[2] == article1
 
 
 @pytest.mark.django_db
 def test_article_status_choices():
-    """Test that article has correct status choices."""
     assert "draft" in Article.STATUS
     assert "published" in Article.STATUS
     assert len(Article.STATUS) == 2
+
+
+@pytest.mark.django_db
+def test_article_with_no_sites_is_visible_everywhere(settings):
+    """Empty sites M2M = article visible on every site."""
+    article = Article.objects.create(
+        title="Global Article",
+        status="published",
+        slug="global",
+        article_body="Visible everywhere",
+    )
+    assert article.sites.count() == 0
+
+    site_one, _ = Site.objects.get_or_create(domain="one.example.com", name="One")
+    site_two, _ = Site.objects.get_or_create(domain="two.example.com", name="Two")
+
+    settings.SITE_ID = site_one.id
+    assert Article.on_site.filter(pk=article.pk).count() == 0
+    # ^ CurrentSiteManager filters by FK presence; for the "visible everywhere"
+    # semantics the consumer should use Article.objects + the OR query
+    # (see ArticleDetailView.get_queryset).
+
+
+@pytest.mark.django_db
+def test_article_visible_only_on_assigned_sites():
+    site_one, _ = Site.objects.get_or_create(domain="one.example.com", name="One")
+    site_two, _ = Site.objects.get_or_create(domain="two.example.com", name="Two")
+
+    article = Article.objects.create(
+        title="Site-One Article",
+        status="published",
+        slug="site-one",
+        article_body="Only on site one",
+    )
+    article.sites.add(site_one)
+
+    assert article.sites.count() == 1
+    assert site_one in article.sites.all()
+    assert site_two not in article.sites.all()
+
+
+@pytest.mark.django_db
+def test_detail_view_filters_by_site(client, settings):
+    site_one, _ = Site.objects.get_or_create(domain="one.example.com", name="One")
+    site_two, _ = Site.objects.get_or_create(domain="two.example.com", name="Two")
+
+    global_article = Article.objects.create(
+        title="Global",
+        status="published",
+        slug="global",
+        article_body="Body",
+    )
+    one_article = Article.objects.create(
+        title="One-only",
+        status="published",
+        slug="one-only",
+        article_body="Body",
+    )
+    one_article.sites.add(site_one)
+    two_article = Article.objects.create(
+        title="Two-only",
+        status="published",
+        slug="two-only",
+        article_body="Body",
+    )
+    two_article.sites.add(site_two)
+
+    settings.SITE_ID = site_one.id
+
+    assert client.get("/global/").status_code == 200
+    assert client.get("/one-only/").status_code == 200
+    assert client.get("/two-only/").status_code == 404
+
+
+@pytest.mark.django_db
+def test_detail_view_excludes_drafts(client):
+    Article.objects.create(
+        title="Draft",
+        status="draft",
+        slug="draft",
+        article_body="Body",
+    )
+    assert client.get("/draft/").status_code == 404

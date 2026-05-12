@@ -10,7 +10,7 @@ BiggerTextarea = Textarea(attrs={"cols": 75, "rows": 18})
 
 class ArticleForm(forms.ModelForm):
     class Meta:
-        fields = ["title", "article_body", "status", "published_on", "slug"]
+        fields = ["title", "article_body", "status", "published_on", "slug", "sites"]
         model = Article
         widgets = {"title": SmallerTextarea, "article_body": BiggerTextarea}
 
@@ -19,5 +19,7 @@ class ArticleForm(forms.ModelForm):
 class ArticleAdmin(admin.ModelAdmin):
     search_fields = ["title", "article_body"]
     list_display = ["title", "status", "created", "published_on"]
+    list_filter = ["status", "sites"]
+    filter_horizontal = ("sites",)
     form = ArticleForm
     prepopulated_fields = {"slug": ("title",)}

@@ -1,0 +1,18 @@
+{% extends "miniblog/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block content %}
+  <article class="miniblog-article">
+    <h1>{{ article.title }}</h1>
+    <p class="miniblog-meta">
+      <time datetime="{{ article.published_on|date:'c' }}">
+        {{ article.published_on|date:"DATE_FORMAT" }}
+      </time>
+    </p>
+    <div class="miniblog-body">
+      {{ article.article_body.content|safe }}
+    </div>
+  </article>
+{% endblock %}
