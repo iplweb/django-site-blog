@@ -1,15 +1,12 @@
-SECRET_KEY = "test-secret-key-not-for-production"
-DEBUG = False
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = "example-not-for-production"
+DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 SITE_ID = 1
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
-    }
-}
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -27,9 +24,17 @@ MIDDLEWARE = [
     "django.contrib.sites.middleware.CurrentSiteMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
 ]
 
-ROOT_URLCONF = "tests.urls"
+ROOT_URLCONF = "example_project.urls"
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 TEMPLATES = [
     {
