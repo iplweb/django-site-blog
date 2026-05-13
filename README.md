@@ -32,7 +32,10 @@ gymnastics.
   `get_absolute_url` so drafts link back into the admin.
 - Split-marker excerpts via `model_utils.SplitField`
   (marker configurable through the `SPLIT_MARKER` setting).
-- Multi-site-aware `ArticleDetailView` (slug-based, filters by `SITE_ID`).
+- Multi-site-aware `ArticleDetailView` (slug-based, resolves the active
+  site via `django.contrib.sites.shortcuts.get_current_site(request)` —
+  honors `CurrentSiteMiddleware` for per-Host deployments and falls back
+  to `settings.SITE_ID` for single-site projects).
 - `Article.on_site` `CurrentSiteManager` for pure
   "current-site only" semantics when the empty-equals-all default isn't
   what you want.
@@ -51,11 +54,12 @@ gymnastics.
 Verified against the CI matrix in
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml). Also
 requires [django-model-utils](https://pypi.org/project/django-model-utils/)
-`>=4.5,<5` (for `SplitField`, `TimeStampedModel`, `StatusModel`).
-The 5.x release of `django-model-utils` changed `SplitField` in a way that
-conflicts with explicit `_article_body_excerpt` declarations in migrations
-(produces a duplicate-column error at `migrate`); the upper bound is
-deliberate until upstream resolves it.
+`>=5,<6` (for `SplitField`, `TimeStampedModel`, `StatusModel`). The 5.x
+release changed how `SplitField` auto-injects its `_article_body_excerpt`
+column at runtime; the shipped `0001_initial` migration uses
+`SeparateDatabaseAndState` to keep the migration **state** and the
+**database** in sync without emitting the column twice on a fresh
+`migrate`.
 
 ## Installation
 
@@ -103,16 +107,27 @@ Each `Article` has a `sites` M2M to `django.contrib.sites.models.Site`.
 - **Empty M2M** → article visible on every site (the default).
 - **One or more sites set** → article only visible on the listed sites.
 
-The included `ArticleDetailView` enforces this with a single OR query:
+The included `ArticleDetailView` resolves the active site via
+`django.contrib.sites.shortcuts.get_current_site(request)` and then runs
+the inverted-default query through the chainable `ArticleQuerySet`:
 
 ```python
-Article.objects.filter(
-    Q(sites__isnull=True) | Q(sites__id=settings.SITE_ID)
-).distinct()
+from django.contrib.sites.shortcuts import get_current_site
+
+site = get_current_site(request)
+Article.objects.published().visible_on_site(site)
 ```
 
-If you want pure "current-site only" semantics (drop the empty-equals-all
-behaviour), use the `Article.on_site` `CurrentSiteManager` instead.
+`get_current_site()` honors `request.site` set by `CurrentSiteMiddleware`
+(per-Host multi-site deployments) and transparently falls back to
+`settings.SITE_ID` for single-site projects — so the same view works in
+both modes without configuration. `visible_on_site()` accepts either a
+`Site` instance or its primary key.
+
+For list / feed views in your own project, prefer this method over
+`Article.on_site` — the latter is a plain `CurrentSiteManager` and treats
+empty-M2M articles as invisible everywhere, which silently drops your
+"visible on every site" default.
 
 ## Settings
 
@@ -129,6 +144,26 @@ The package ships two minimal templates:
 - `siteblog/base.html` — a bare HTML skeleton; override it in your
   project by placing a `siteblog/base.html` ahead of the package's
   in your `TEMPLATES` `DIRS`.
+
+## Security — trust boundary on `article_body`
+
+`siteblog/article_detail.html` renders `article.article_body.content`
+through Django's `|safe` filter, so HTML written by editors is emitted
+verbatim. This is deliberate — the field is intended for authoring
+formatted content (`<strong>`, `<h2>`, `<a>`, `<blockquote>`, etc.) —
+**but it makes the admin a trusted authoring surface.**
+
+If everyone with `change_article` permission is trusted to author HTML
+(the default Django-admin assumption), no extra work is required. If
+that is not the case in your deployment, either:
+
+- sanitize on save (e.g. a `clean_article_body` that runs
+  [`bleach`](https://pypi.org/project/bleach/) over the value), or
+- override `siteblog/article_detail.html` in your project and drop
+  `|safe` (renders the raw markup as text).
+
+The same caveat applies to any list / excerpt view you build on top of
+`article_body.excerpt`.
 
 ## Example / demo project
 

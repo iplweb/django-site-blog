@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.sites.managers import CurrentSiteManager
 from django.contrib.sites.models import Site
 from django.db import models
+from django.db.models import Q
 from django.urls.base import reverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -13,6 +14,18 @@ from model_utils.models import StatusModel, TimeStampedModel
 SPLIT_MARKER = getattr(settings, "SPLIT_MARKER", "<!-- split -->")
 
 
+class ArticleQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(status="published")
+
+    def visible_on_site(self, site):
+        # Empty `sites` M2M means "visible everywhere"; otherwise the article
+        # is restricted to the listed sites. `site` can be a `Site` instance
+        # or a primary-key int.
+        site_id = getattr(site, "id", site)
+        return self.filter(Q(sites__isnull=True) | Q(sites__id=site_id)).distinct()
+
+
 class Article(TimeStampedModel, StatusModel):
     STATUS = Choices(("draft", _("draft")), ("published", _("published")))
 
@@ -20,7 +33,7 @@ class Article(TimeStampedModel, StatusModel):
     article_body = SplitField(
         verbose_name=_("Article body"),
         help_text=_(
-            'Use the split marker "%s" in case you want to display'
+            'Use the split marker "%s" in case you want to display '
             "the shorter version of the article body"
         )
         % escape(SPLIT_MARKER),
@@ -41,7 +54,7 @@ class Article(TimeStampedModel, StatusModel):
         ),
     )
 
-    objects = models.Manager()
+    objects = ArticleQuerySet.as_manager()
     on_site = CurrentSiteManager("sites")
 
     class Meta:

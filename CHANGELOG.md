@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-13
+
+### Added
+
+- `ArticleQuerySet.published()` and `ArticleQuerySet.visible_on_site(site)`,
+  exposed via `Article.objects` as chainable methods. Centralizes the
+  inverted-M2M visibility query so list / detail / feed views can share
+  one implementation without re-deriving it (and without accidentally
+  reaching for `Article.on_site`, which drops "visible everywhere"
+  articles). `visible_on_site()` accepts a `Site` instance or its
+  primary key.
+
+### Changed
+
+- `ArticleDetailView.get_queryset` and the demo `HomeListView` both
+  switched to `Article.objects.published().visible_on_site(site)`, so
+  the two views share a single source of truth for the visibility
+  semantics.
+
+### Documentation
+
+- README: corrected `django-model-utils` version range to `>=5,<6`
+  (matches `pyproject.toml`; the 0.2.0 release notes already documented
+  the bump but the version table was missed). Rewrote the "How site
+  assignment works" section around `get_current_site(request)` instead
+  of the obsolete direct-`SITE_ID` example, and showcased the new
+  chained queryset API. Added a "Security — trust boundary on
+  `article_body`" section calling out the `|safe` rendering path.
+
+### Fixed
+
+- `Article.article_body` admin help text: removed `"displaythe"`
+  concatenation typo (missing space between two adjacent translatable
+  string literals). Same correction applied to the frozen help text in
+  `0001_initial`; the migration change is state-only (no SQL effect).
+
 ## [0.2.0] - 2026-05-13
 
 ### Added

@@ -112,4 +112,17 @@ There is exactly one migration: `0001_initial.py`. It was regenerated from scrat
 
 ## django-model-utils pin (this matters)
 
-`pyproject.toml` requires `django-model-utils>=4.5,<5`. The 4.x `SplitField.deconstruct()` injects `no_excerpt_field=True` into the migration so `contribute_to_class` skips the dynamic excerpt-column add at apply time — and the migration declares `_article_body_excerpt` explicitly instead. In 5.x that opt-out was removed, so `contribute_to_class` always adds the excerpt column **on top of** the one declared in the migration, producing a `duplicate column name: _article_body_excerpt` SQL error at `migrate`. Until upstream `django-model-utils` provides a working SplitField under 5.x, do not lift the `<5` ceiling without also regenerating `0001_initial` and verifying `manage.py migrate` round-trips on a fresh DB.
+`pyproject.toml` requires `django-model-utils>=5,<6`. In 5.x, `SplitField.deconstruct()` no longer accepts the 4.x-only `no_excerpt_field=True` opt-out, so `contribute_to_class` always auto-injects an `_<name>_excerpt` `TextField` at runtime. If the migration ALSO declares `_article_body_excerpt` explicitly in `CreateModel.fields`, the SchemaEditor emits the column twice and `migrate` dies with `duplicate column name: _article_body_excerpt`.
+
+The fix in `0001_initial.py` is `migrations.SeparateDatabaseAndState`:
+
+- The `database_operations` `CreateModel` lists only the explicit fields (no excerpt). The SchemaEditor reifies the live model class — which has the auto-injected excerpt column — so the resulting `CREATE TABLE` includes `_article_body_excerpt` exactly once.
+- The `state_operations` `CreateModel` lists the explicit fields **plus** `_article_body_excerpt` so the migration graph state knows the column exists. Without this, `makemigrations` keeps proposing spurious `AddField` operations on every run.
+
+Do not lift the `<6` ceiling on `django-model-utils` without re-validating this dance — a future major could change the auto-injection semantics again.
+
+## Queryset API (centralized site filter)
+
+`Article.objects` is an `ArticleQuerySet.as_manager()`. Chain `.published()` and `.visible_on_site(site)` to centralize the inverted-M2M visibility query — see `src/siteblog/views.py` for the canonical usage. `visible_on_site` accepts a `Site` instance or its primary key. **Do not bypass it with `Article.on_site`** for list/detail views: `on_site` is a plain `CurrentSiteManager` and drops empty-M2M ("visible everywhere") articles.
+
+Note: `as_manager()` produces a synthetic Manager class with no stable import path, so Django's migration serializer renders it as plain `django.db.models.manager.Manager()` in `0001_initial`'s `MANAGERS` list. That's expected — the runtime QuerySet methods come from the live model class, not the migration record. `makemigrations --check` stays green.

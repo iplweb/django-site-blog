@@ -66,7 +66,7 @@ COMMON_FIELDS = [
         model_utils.fields.SplitField(
             help_text=(
                 'Use the split marker "&lt;!-- split --&gt;" in '
-                "case you want to displaythe shorter version of "
+                "case you want to display the shorter version of "
                 "the article body"
             ),
             verbose_name="Article body",
