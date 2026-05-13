@@ -193,9 +193,16 @@ breakdown of which articles are visible on which hostnames.
 ```bash
 git clone https://github.com/iplweb/django-site-blog.git
 cd django-site-blog
-uv sync --all-extras
+uv sync --all-extras --all-groups
 DJANGO_SETTINGS_MODULE=tests.settings uv run pytest
 ```
+
+Dependency layout: the user-facing `rich-editor` opt-in lives under
+`[project.optional-dependencies]` (published in PyPI metadata), while
+the local-only tooling (`pre-commit`, `ruff`, `pytest`, `pytest-django`)
+is declared under PEP 735 `[dependency-groups]` so it never reaches
+published metadata. CI installs them targeted (`uv sync --group test`
+for the matrix, `uv sync --group dev` for lint).
 
 `pre-commit install` to wire ruff + pyupgrade + django-upgrade.
 

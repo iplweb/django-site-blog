@@ -59,7 +59,7 @@ If a future change adds a list view, decide which semantics it should follow and
 The project is `uv`-managed; CI uses uv exclusively.
 
 ```bash
-uv sync --all-extras                                       # install dev + test extras
+uv sync --all-extras --all-groups                          # full local install (incl. rich-editor extra + dev/test groups)
 DJANGO_SETTINGS_MODULE=tests.settings uv run pytest        # full test suite
 uv run pytest tests/test_views.py::test_detail_view_hidden_on_other_site  # one test
 uv run ruff check .                                        # lint
@@ -68,6 +68,11 @@ uv run ruff format .                                       # apply formatting
 pre-commit install                                         # one-time, then runs on commit
 pre-commit run --all-files                                 # manual full pass
 ```
+
+Dependency layout (PEP 735):
+
+- `[project.optional-dependencies]` — **user-facing extras**, published in PyPI metadata. Currently: `rich-editor` (django-tinymce) for the example demo's optional admin widget.
+- `[dependency-groups]` — **author-only tooling**, never published. `test` (pytest, pytest-django) and `dev` (pre-commit, ruff). CI installs them targeted: `uv sync --group test` for the test matrix and `uv sync --group dev` for lint.
 
 Running the example project (a real Django project that depends on the in-tree app):
 

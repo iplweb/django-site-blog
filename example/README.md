@@ -67,7 +67,7 @@ editor by installing the `rich-editor` extra and setting an env var:
 ```bash
 # from the repository root:
 uv sync --extra rich-editor                # installs django-tinymce
-# or: uv sync --all-extras
+# or: uv sync --all-extras --all-groups    # everything (extras + dev/test groups)
 
 cd example
 RICH_EDITOR=1 DJANGO_SETTINGS_MODULE=example_project.settings \

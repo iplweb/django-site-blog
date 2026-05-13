@@ -35,7 +35,18 @@ dependencies = [
     "django-model-utils>=5,<6",
 ]
 
+# User-facing extras (published in PyPI metadata; installable via
+# `pip install django-site-blog[<extra>]`).
 [project.optional-dependencies]
+# Optional rich text editor used by the bundled `example/` demo when the
+# RICH_EDITOR=1 env var is set. Not required by the published package.
+rich-editor = [
+    "django-tinymce>=4",
+]
+
+# Author-only tooling (PEP 735). Not shipped in PyPI metadata; installed
+# locally via `uv sync` / `uv sync --all-groups`.
+[dependency-groups]
 test = [
     "pytest>=8",
     "pytest-django>=4.8",
@@ -43,11 +54,6 @@ test = [
 dev = [
     "pre-commit",
     "ruff",
-]
-# Optional rich text editor used by the bundled `example/` demo when the
-# RICH_EDITOR=1 env var is set. Not required by the published package.
-rich-editor = [
-    "django-tinymce>=4",
 ]
 
 [project.urls]

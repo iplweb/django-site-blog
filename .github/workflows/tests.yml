@@ -36,7 +36,7 @@ jobs:
         env:
           DJANGO_VERSION: ${{ matrix.django-version }}
         run: |
-          uv sync --all-extras
+          uv sync --group test
           uv pip install "django~=${DJANGO_VERSION}.0"
 
       - name: Run tests
@@ -56,7 +56,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --group dev
 
       - name: Lint with ruff
         run: uv run ruff check .
@@ -76,7 +76,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync
 
       - name: Django check on example project
         env:
