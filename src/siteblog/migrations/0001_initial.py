@@ -4,7 +4,6 @@ import django.utils.timezone
 import model_utils.fields
 from django.db import migrations, models
 
-
 # `model_utils.fields.SplitField` (>=5) injects an `_<name>_excerpt`
 # TextField via ``contribute_to_class`` at runtime. The database side of the
 # migration picks that up automatically when the SchemaEditor reifies the

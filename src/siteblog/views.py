@@ -1,4 +1,4 @@
-from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from django.db.models import Q
 from django.views.generic import DetailView
 
@@ -14,7 +14,8 @@ class ArticleDetailView(DetailView):
 
     def get_queryset(self):
         qs = Article.objects.filter(status=Article.STATUS.published)
-        site_id = getattr(settings, "SITE_ID", None)
-        if site_id is not None:
-            qs = qs.filter(Q(sites__isnull=True) | Q(sites__id=site_id)).distinct()
-        return qs
+        # get_current_site honors request.site (set by CurrentSiteMiddleware
+        # from the Host header) and falls back to settings.SITE_ID, so the
+        # same view works for single-site and per-host multi-site deployments.
+        site = get_current_site(self.request)
+        return qs.filter(Q(sites__isnull=True) | Q(sites__id=site.id)).distinct()
