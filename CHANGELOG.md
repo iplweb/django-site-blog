@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-13
+
+### Added
+
+- Runnable end-to-end demo at `example/`. Seeds four `Site` rows
+  (`example.com`, `mac-mini`, plus `localhost` and `127.0.0.1` so the
+  demo works zero-config), a `HomeListView` rendering excerpts with a
+  "Read more" link gated on `article_body.has_more`, and an admin
+  sign-in link in the homepage header.
+- Demo articles use the `<!-- split -->` marker on its own line so the
+  list view shows the excerpt and the detail view shows the full body
+  (`<strong>`, `<em>`, `<h2>`, `<ul>`, `<a>`, `<code>`,
+  `<blockquote>`).
+- Optional `rich-editor` extras dependency (django-tinymce). Setting
+  `RICH_EDITOR=1` in the example's environment swaps the plain admin
+  textarea for a TinyMCE widget on `article_body` via an
+  `admin.site.unregister` / re-register in
+  `example_project/admin.py`. The package model and migrations are
+  untouched.
+- `example_project/settings.py` probes for `tinymce` before adding it
+  to `INSTALLED_APPS` and raises `ImproperlyConfigured` with the exact
+  install command if `RICH_EDITOR=1` is set without the extra
+  installed, instead of a deep `ModuleNotFoundError` from Django's
+  app registry.
+
+### Changed
+
+- `ArticleDetailView` now resolves the active `Site` via
+  `django.contrib.sites.shortcuts.get_current_site(request)` instead
+  of reading `settings.SITE_ID` directly. Honors `request.site` set by
+  `CurrentSiteMiddleware` for per-Host multi-site deployments;
+  transparently falls back to `settings.SITE_ID` for single-site
+  setups.
+- Author-only tooling (`pre-commit`, `ruff`, `pytest`,
+  `pytest-django`) moved from `[project.optional-dependencies]` to
+  `[dependency-groups]` (PEP 735, uv ≥ 0.4). The user-facing
+  `rich-editor` opt-in stays under `[project.optional-dependencies]`.
+  CI now installs groups targeted (`--group test`, `--group dev`).
+- `django-model-utils` requirement narrowed to `>=5,<6`. The previous
+  `>=4.5` was effectively wrong on 5.x because the shipped migration
+  raised `TypeError` at load time.
+
 ### Fixed
 
 - `0001_initial` is no longer broken on `django-model-utils >= 5`. The
@@ -14,12 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   migration now uses `SeparateDatabaseAndState` so that the auto-injected
   `_article_body_excerpt` column appears in the migration state without
   being emitted twice in `CREATE TABLE`.
-
-### Changed
-
-- `django-model-utils` requirement narrowed to `>=5,<6`. The previous
-  `>=4.5` was effectively wrong on 5.x because the shipped migration
-  raised `TypeError` at load time.
 
 ## [0.1.0] - 2026-05-13
 
