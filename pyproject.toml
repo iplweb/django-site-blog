@@ -44,6 +44,11 @@ dev = [
     "pre-commit",
     "ruff",
 ]
+# Optional rich text editor used by the bundled `example/` demo when the
+# RICH_EDITOR=1 env var is set. Not required by the published package.
+rich-editor = [
+    "django-tinymce>=4",
+]
 
 [project.urls]
 Homepage = "https://github.com/iplweb/django-site-blog"
@@ -66,6 +71,8 @@ select = ["E", "F", "W", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/siteblog/migrations/*" = ["E501"]
+# Demo article bodies are inline HTML literals; long lines are unavoidable.
+"example/example_project/management/commands/seed_demo.py" = ["E501"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>django-site-blog demo &middot; {{ current_site.name }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #222; line-height: 1.5; }
+    header { border-bottom: 1px solid #ddd; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+    header h1 { margin: 0 0 0.25rem 0; font-size: 1.5rem; }
+    header .header-meta { flex: 1 1 auto; }
+    header nav a { color: #135; text-decoration: none; padding: 0.35rem 0.7rem; border: 1px solid #cbd; border-radius: 4px; font-size: 0.9rem; }
+    header nav a:hover { background: #eef; }
+    .site-tag { display: inline-block; padding: 0.15rem 0.5rem; background: #eef; border-radius: 4px; font-size: 0.85rem; color: #224; }
+    ul.articles { list-style: none; padding: 0; }
+    ul.articles li { padding: 1rem 0; border-bottom: 1px solid #eee; }
+    ul.articles li h2 { margin: 0 0 0.25rem 0; font-size: 1.15rem; }
+    ul.articles li h2 a { text-decoration: none; color: #135; }
+    ul.articles li h2 a:hover { text-decoration: underline; }
+    ul.articles li .meta { display: block; color: #777; font-size: 0.85rem; margin: 0.15rem 0 0.5rem; }
+    ul.articles li .excerpt { color: #333; }
+    ul.articles li .excerpt p:first-child { margin-top: 0; }
+    ul.articles li .excerpt p:last-child { margin-bottom: 0.5rem; }
+    .read-more { font-size: 0.9rem; color: #135; text-decoration: none; }
+    .read-more:hover { text-decoration: underline; }
+    .empty { color: #888; font-style: italic; }
+    footer { margin-top: 2rem; color: #888; font-size: 0.85rem; border-top: 1px solid #eee; padding-top: 1rem; }
+    /* styles for the safe HTML the seed articles render: */
+    .excerpt strong, .excerpt b { color: #111; }
+    .excerpt em, .excerpt i { color: #333; }
+    .excerpt code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.9em; }
+    .excerpt blockquote { border-left: 3px solid #cbd; margin: 0.5rem 0; padding: 0.25rem 0.75rem; color: #555; font-style: italic; }
+    .excerpt ul, .excerpt ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+    .excerpt a { color: #135; }
+    code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-meta">
+      <h1>django-site-blog demo</h1>
+      <p>
+        You are browsing as
+        <span class="site-tag">{{ current_site.domain }} &middot; {{ current_site.name }}</span>.
+      </p>
+    </div>
+    <nav>
+      {% if user.is_authenticated %}
+        <a href="{% url 'admin:index' %}">Admin ({{ user.get_username }})</a>
+      {% else %}
+        <a href="{% url 'admin:login' %}?next={% url 'admin:index' %}">Sign in to admin</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% if articles %}
+    <ul class="articles">
+      {% for article in articles %}
+        <li>
+          <h2>
+            <a href="{% url 'siteblog:article-detail' article.slug %}">{{ article.title }}</a>
+          </h2>
+          <span class="meta">
+            {{ article.published_on|date:"DATE_FORMAT" }} &middot;
+            {% if article.sites.all %}
+              visible only on:
+              {% for s in article.sites.all %}{{ s.domain }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              visible on every site
+            {% endif %}
+          </span>
+          <div class="excerpt">
+            {{ article.article_body.excerpt|safe }}
+          </div>
+          {% if article.article_body.has_more %}
+            <a class="read-more" href="{% url 'siteblog:article-detail' article.slug %}">Read more &rarr;</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No articles visible on this site yet. Run <code>manage.py seed_demo</code>.</p>
+  {% endif %}
+
+  <footer>
+    Try the same URL via a different host (e.g. <code>example.com</code> vs <code>mac-mini</code>) to see per-site filtering.
+  </footer>
+</body>
+</html>
