@@ -1,0 +1,12 @@
+{# Minimal base template shipped with django-site-blog. #}
+{# Override this in your project by placing siteblog/base.html in your TEMPLATES dirs. #}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}siteblog{% endblock %}</title>
+</head>
+<body>
+  {% block content %}{% endblock %}
+</body>
+</html>

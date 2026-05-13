@@ -1,6 +1,6 @@
-# Example project for `django-sites-blog`
+# Example project for `django-site-blog`
 
-Bare-minimum Django project that installs `miniblog` and exposes its
+Bare-minimum Django project that installs `siteblog` and exposes its
 URLs at `/articles/`.
 
 ```bash

@@ -2,7 +2,7 @@ import pytest
 from django.contrib.sites.models import Site
 from django.db import IntegrityError
 
-from miniblog.models import Article
+from siteblog.models import Article
 
 
 def test_article_str():
@@ -25,7 +25,7 @@ def test_get_absolute_url_draft():
     )
     url = article.get_absolute_url()
     assert "admin" in url
-    assert "miniblog" in url
+    assert "siteblog" in url
     assert str(article.pk) in url
 
 

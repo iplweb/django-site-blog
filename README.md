@@ -1,9 +1,9 @@
-# django-sites-blog
+# django-site-blog
 
-[![Tests](https://github.com/iplweb/django-sites-blog/actions/workflows/tests.yml/badge.svg)](https://github.com/iplweb/django-sites-blog/actions/workflows/tests.yml)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/iplweb/django-sites-blog)
-[![Django](https://img.shields.io/badge/django-5.2%20LTS%20%7C%206.0-0c4b33)](https://github.com/iplweb/django-sites-blog)
-[![License](https://img.shields.io/github/license/iplweb/django-sites-blog)](LICENSE)
+[![Tests](https://github.com/iplweb/django-site-blog/actions/workflows/tests.yml/badge.svg)](https://github.com/iplweb/django-site-blog/actions/workflows/tests.yml)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/iplweb/django-site-blog)
+[![Django](https://img.shields.io/badge/django-5.2%20LTS%20%7C%206.0-0c4b33)](https://github.com/iplweb/django-site-blog)
+[![License](https://img.shields.io/github/license/iplweb/django-site-blog)](LICENSE)
 
 Small Django blog / news app with multi-site support
 (`django.contrib.sites`).
@@ -19,7 +19,7 @@ research portal, project subsites — from a single codebase using
 `django.contrib.sites`. Most blog/news apps either ignore that scenario
 or expect a separate deployment per site.
 
-`django-sites-blog` keeps one article store and lets editors say, per
+`django-site-blog` keeps one article store and lets editors say, per
 article, whether it should appear on _every_ site (the default) or be
 restricted to a chosen subset. One schema, one query, no middleware
 gymnastics.
@@ -51,18 +51,22 @@ gymnastics.
 Verified against the CI matrix in
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml). Also
 requires [django-model-utils](https://pypi.org/project/django-model-utils/)
-≥ 4.5 (for `SplitField`, `TimeStampedModel`, `StatusModel`).
+`>=4.5,<5` (for `SplitField`, `TimeStampedModel`, `StatusModel`).
+The 5.x release of `django-model-utils` changed `SplitField` in a way that
+conflicts with explicit `_article_body_excerpt` declarations in migrations
+(produces a duplicate-column error at `migrate`); the upper bound is
+deliberate until upstream resolves it.
 
 ## Installation
 
 ```bash
-uv add django-sites-blog
+uv add django-site-blog
 ```
 
 or with pip:
 
 ```bash
-pip install django-sites-blog
+pip install django-site-blog
 ```
 
 Add the app and `django.contrib.sites` to `INSTALLED_APPS`:
@@ -71,7 +75,7 @@ Add the app and `django.contrib.sites` to `INSTALLED_APPS`:
 INSTALLED_APPS = [
     # ...
     "django.contrib.sites",
-    "miniblog",
+    "siteblog",
 ]
 
 SITE_ID = 1  # required by django.contrib.sites
@@ -82,7 +86,7 @@ Include the URLs in your project's `urls.py`:
 ```python
 urlpatterns = [
     # ...
-    path("articles/", include("miniblog.urls")),
+    path("articles/", include("siteblog.urls")),
 ]
 ```
 
@@ -121,16 +125,16 @@ behaviour), use the `Article.on_site` `CurrentSiteManager` instead.
 
 The package ships two minimal templates:
 
-- `miniblog/article_detail.html` — uses `{% extends "miniblog/base.html" %}`.
-- `miniblog/base.html` — a bare HTML skeleton; override it in your
-  project by placing a `miniblog/base.html` ahead of the package's
+- `siteblog/article_detail.html` — uses `{% extends "siteblog/base.html" %}`.
+- `siteblog/base.html` — a bare HTML skeleton; override it in your
+  project by placing a `siteblog/base.html` ahead of the package's
   in your `TEMPLATES` `DIRS`.
 
 ## Development
 
 ```bash
-git clone https://github.com/iplweb/django-sites-blog.git
-cd django-sites-blog
+git clone https://github.com/iplweb/django-site-blog.git
+cd django-site-blog
 uv sync --all-extras
 DJANGO_SETTINGS_MODULE=tests.settings uv run pytest
 ```

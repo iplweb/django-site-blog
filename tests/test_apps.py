@@ -1,11 +1,11 @@
 def test_app_imports():
-    import miniblog
+    import siteblog
 
-    assert miniblog
+    assert siteblog
 
 
 def test_appconfig_loads():
     from django.apps import apps
 
-    config = apps.get_app_config("miniblog")
-    assert config.name == "miniblog"
+    config = apps.get_app_config("siteblog")
+    assert config.name == "siteblog"

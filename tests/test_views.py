@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.sites.models import Site
 
-from miniblog.models import Article
+from siteblog.models import Article
 
 
 @pytest.mark.django_db

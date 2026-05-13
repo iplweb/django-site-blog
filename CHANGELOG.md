@@ -14,9 +14,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Article.sites` ManyToManyField to `django.contrib.sites.models.Site`.
   Empty M2M means "visible everywhere"; populated M2M restricts visibility.
 - `ArticleDetailView` (slug-based, filters by `SITE_ID`).
-- `miniblog` URL namespace with `article-detail` route.
+- `siteblog` URL namespace with `article-detail` route.
+- Single squashed `0001_initial` migration for the `Article` model,
+  capturing every field (including the `model_utils.SplitField`
+  excerpt column `_article_body_excerpt`), the `sites` M2M, and the
+  explicit `objects` / `on_site` managers in one shot. Earlier history
+  in `iplweb/bpp` had four incremental migrations; collapsing them
+  here is intentional because this is the package's first standalone
+  release, so there is no downstream migration graph to preserve.
+- `BigAutoField` as the package-pinned `default_auto_field`
+  (via `SiteblogConfig.default_auto_field`) so the schema stays
+  consistent regardless of the consuming project's
+  `DEFAULT_AUTO_FIELD` setting.
 - Minimal template scaffolding (`article_detail.html`, `base.html`).
 - Admin `filter_horizontal` + `list_filter` for the `sites` field.
+
+### Notes for downstream projects upgrading from `miniblog` (`django-sites-blog`)
+
+This is a breaking rename. A project that already had the old
+`miniblog` app installed needs to handle the transition on its own
+side, before installing `django-site-blog`:
+
+- Drop the `miniblog_article` and `miniblog_article_sites` tables
+  (after archiving content if needed).
+- `DELETE FROM django_migrations WHERE app = 'miniblog';`
+- `DELETE FROM django_content_type WHERE app_label = 'miniblog';`
+- Then install `django-site-blog`, set `INSTALLED_APPS = [..., "siteblog"]`,
+  and run `migrate` so the new `0001_initial` builds the
+  `siteblog_article` schema.
+
+If preserving article content matters, copy rows from `miniblog_article`
+into `siteblog_article` after the new migration runs. The schemas are
+compatible field-for-field except for `id` (was `AutoField`, now
+`BigAutoField`) — that's safe for `INSERT ... SELECT id, ...`.
 
 ### Removed
 

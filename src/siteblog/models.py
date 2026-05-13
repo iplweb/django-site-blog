@@ -51,8 +51,8 @@ class Article(TimeStampedModel, StatusModel):
 
     def get_absolute_url(self):
         if self.status != self.STATUS.published:
-            return reverse("admin:miniblog_article_change", args=(self.pk,))
-        return reverse("miniblog:article-detail", args=(self.slug,))
+            return reverse("admin:siteblog_article_change", args=(self.pk,))
+        return reverse("siteblog:article-detail", args=(self.slug,))
 
     def __str__(self):
         return f'Artykuł "{self.title}" - {self.STATUS[self.status]}'
