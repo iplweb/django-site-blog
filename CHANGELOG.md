@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `0001_initial` is no longer broken on `django-model-utils >= 5`. The
+  4.x-only `SplitField(no_excerpt_field=True)` kwarg was removed; the
+  migration now uses `SeparateDatabaseAndState` so that the auto-injected
+  `_article_body_excerpt` column appears in the migration state without
+  being emitted twice in `CREATE TABLE`.
+
+### Changed
+
+- `django-model-utils` requirement narrowed to `>=5,<6`. The previous
+  `>=4.5` was effectively wrong on 5.x because the shipped migration
+  raised `TypeError` at load time.
+
+## [0.1.0] - 2026-05-13
+
 ### Added
 
 - Initial extraction from
