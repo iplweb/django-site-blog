@@ -130,6 +130,64 @@ The package ships two minimal templates:
   project by placing a `siteblog/base.html` ahead of the package's
   in your `TEMPLATES` `DIRS`.
 
+## Example / demo project
+
+The repository ships with a runnable demo at [`example/`](./example/)
+that wires `siteblog` together with four `django.contrib.sites` rows
+(`example.com`, `mac-mini`, `localhost`, `127.0.0.1`) so you can see
+per-host filtering in action from a single dev server. The seeded
+articles use the `<!-- split -->` marker, so the homepage shows just
+the excerpt with a "Read more →" link, while the detail page renders
+the full body with `<strong>` / `<em>` / `<h2>` / lists / blockquotes /
+`<code>` to illustrate the package's `|safe` rendering path.
+
+Quick start:
+
+```bash
+cd example
+DJANGO_SETTINGS_MODULE=example_project.settings uv run python manage.py migrate
+DJANGO_SETTINGS_MODULE=example_project.settings uv run python manage.py seed_demo
+DJANGO_SETTINGS_MODULE=example_project.settings uv run python manage.py createsuperuser
+DJANGO_SETTINGS_MODULE=example_project.settings uv run python manage.py runserver
+```
+
+Then visit <http://localhost:8000/>. The header shows a **"Sign in to
+admin"** link pointing at `/admin/login/`, which switches to **"Admin
+(username)"** once you sign in.
+
+### Optional: TinyMCE rich text editor in the admin
+
+The package ships with a plain `<textarea>` for `article_body`. The
+example project can swap that for a [TinyMCE](https://www.tiny.cloud/)
+editor via the `rich-editor` extras dependency:
+
+```bash
+# from the repository root:
+uv sync --extra rich-editor                   # installs django-tinymce
+
+cd example
+RICH_EDITOR=1 DJANGO_SETTINGS_MODULE=example_project.settings \
+    uv run python manage.py runserver
+```
+
+When `RICH_EDITOR=1` is set, the example's `settings.py` adds
+`tinymce` to `INSTALLED_APPS`, the URLconf mounts `tinymce.urls`, and
+`example_project/admin.py` (auto-loaded by Django's admin
+autodiscover) unregisters the package's `ArticleAdmin` and
+re-registers it with a TinyMCE widget on `article_body`. The model,
+migrations, and public view are unchanged — only the admin form
+widget differs, so the rich editor is purely a demo-side overlay you
+can opt into in your own project.
+
+If `RICH_EDITOR=1` is set but `django-tinymce` is missing,
+`settings.py` raises a clear `ImproperlyConfigured` at startup with
+the exact install command, instead of a `ModuleNotFoundError` from
+deep in Django's app registry.
+
+See [`example/README.md`](./example/README.md) for the multi-host
+testing recipe (`/etc/hosts` vs. `curl --resolve`) and a full
+breakdown of which articles are visible on which hostnames.
+
 ## Development
 
 ```bash
