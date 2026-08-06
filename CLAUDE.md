@@ -101,6 +101,7 @@ CI (`.github/workflows/tests.yml`) tests:
 
 - Django 5.2 LTS × Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14
 - Django 6.0 × Python 3.12 / 3.13 / 3.14
+- Django 6.1 × Python 3.12 / 3.13 / 3.14
 
 `pyproject.toml` requires `django>=5.2`. Pre-commit pins `django-upgrade --target-version 5.2`, so anything that auto-rewrites to Django 5.2-only idioms is expected and fine.
 
