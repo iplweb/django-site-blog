@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/iplweb/django-site-blog/actions/workflows/tests.yml/badge.svg)](https://github.com/iplweb/django-site-blog/actions/workflows/tests.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/iplweb/django-site-blog)
-[![Django](https://img.shields.io/badge/django-5.2%20LTS%20%7C%206.0-0c4b33)](https://github.com/iplweb/django-site-blog)
+[![Django](https://img.shields.io/badge/django-5.2%20LTS%20%7C%206.0%20%7C%206.1-0c4b33)](https://github.com/iplweb/django-site-blog)
 [![License](https://img.shields.io/github/license/iplweb/django-site-blog)](LICENSE)
 
 Small Django blog / news app with multi-site support
@@ -50,6 +50,7 @@ gymnastics.
 |---------|------|------|------|------|------|-----------------------------------------|
 | 5.2 LTS | ✓    | ✓    | ✓    | ✓    | ✓    | Active LTS (extended support Apr 2028)  |
 | 6.0     | —    | —    | ✓    | ✓    | ✓    | Mainstream Aug 2026, extended Apr 2027  |
+| 6.1     | —    | —    | ✓    | ✓    | ✓    | Latest feature release (Python >= 3.12) |
 
 Verified against the CI matrix in
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml). Also
